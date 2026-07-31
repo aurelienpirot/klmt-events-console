@@ -285,8 +285,9 @@ export default function Home() {
   const [selectedYear, setSelectedYear] = useState<number>(2026);
 
   // Manual Tasks State
-  const [manualTasks, setManualTasks] = useState<{ id: string; label: string; date: string; type: string; severity: 'high' | 'warning' | 'info' }[]>([]);
+  const [manualTasks, setManualTasks] = useState<{ id: string; label: string; description?: string; date: string; type: string; severity: 'high' | 'warning' | 'info' }[]>([]);
   const [newTaskLabel, setNewTaskLabel] = useState('');
+  const [newTaskDescription, setNewTaskDescription] = useState('');
   const [newTaskDate, setNewTaskDate] = useState('2026-07-30');
   const [newTaskSeverity, setNewTaskSeverity] = useState<'high' | 'warning' | 'info'>('warning');
   const [showAddTaskForm, setShowAddTaskForm] = useState(false);
@@ -334,6 +335,7 @@ export default function Home() {
     const newTask = {
       id: `manual-${Date.now()}`,
       label: newTaskLabel.trim(),
+      description: newTaskDescription.trim() || undefined,
       date: taskDate,
       type: '📌 Manuel',
       severity: newTaskSeverity
@@ -341,6 +343,7 @@ export default function Home() {
 
     saveManualTasks([...manualTasks, newTask]);
     setNewTaskLabel('');
+    setNewTaskDescription('');
     setNewTaskDate('2026-07-30');
     setNewTaskSeverity('warning');
     setShowAddTaskForm(false);
@@ -3255,9 +3258,16 @@ export default function Home() {
                                     }}>
                                       {t.type}
                                     </span>
-                                    <span style={{ color: '#ffffff', fontSize: '0.88rem', lineHeight: '1.4' }}>
-                                      {t.label}
-                                    </span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                      <span style={{ color: '#ffffff', fontSize: '0.88rem', lineHeight: '1.4', fontWeight: 'bold' }}>
+                                        {t.label}
+                                      </span>
+                                      {t.description && (
+                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                                          {t.description}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -3292,13 +3302,23 @@ export default function Home() {
                         {/* Simple Manual Task Form */}
                         {showAddTaskForm && (
                           <form onSubmit={handleAddManualTask} style={{ display: 'flex', gap: '10px', marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '15px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                            <div style={{ flex: '1', minWidth: '200px' }}>
-                              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '5px' }}>Description :</label>
+                            <div style={{ flex: '1', minWidth: '150px' }}>
+                              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '5px' }}>Titre :</label>
                               <input
                                 type="text"
                                 value={newTaskLabel}
                                 onChange={(e) => setNewTaskLabel(e.target.value)}
-                                placeholder="Description de la tâche..."
+                                placeholder="Titre de la tâche..."
+                                style={{ width: '100%', boxSizing: 'border-box', padding: '8px', backgroundColor: '#0d1117', border: '1px solid var(--border-color)', borderRadius: '6px', color: '#ffffff', fontSize: '0.9rem' }}
+                              />
+                            </div>
+                            <div style={{ flex: '1.5', minWidth: '200px' }}>
+                              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '5px' }}>Description :</label>
+                              <input
+                                type="text"
+                                value={newTaskDescription}
+                                onChange={(e) => setNewTaskDescription(e.target.value)}
+                                placeholder="Description détaillée..."
                                 style={{ width: '100%', boxSizing: 'border-box', padding: '8px', backgroundColor: '#0d1117', border: '1px solid var(--border-color)', borderRadius: '6px', color: '#ffffff', fontSize: '0.9rem' }}
                               />
                             </div>
