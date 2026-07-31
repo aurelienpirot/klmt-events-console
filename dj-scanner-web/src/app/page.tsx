@@ -274,6 +274,29 @@ interface StyleSuggestion {
   loading: boolean;
 }
 
+const getTodayDateString = () => {
+  const today = new Date();
+  const d = String(today.getDate()).padStart(2, '0');
+  const m = String(today.getMonth() + 1).padStart(2, '0');
+  const y = today.getFullYear();
+  return `${y}-${m}-${d}`;
+};
+
+const getTodayDateStringForSeverity = (severity: 'high' | 'warning' | 'info') => {
+  const today = new Date();
+  let daysToAdd = 3; // 'warning' (Moyenne)
+  if (severity === 'high') {
+    daysToAdd = 1; // 'high' (Élevée)
+  } else if (severity === 'info') {
+    daysToAdd = 7; // 'info' (Faible)
+  }
+  today.setDate(today.getDate() + daysToAdd);
+  const d = String(today.getDate()).padStart(2, '0');
+  const m = String(today.getMonth() + 1).padStart(2, '0');
+  const y = today.getFullYear();
+  return `${y}-${m}-${d}`;
+};
+
 export default function Home() {
   // Navigation & Tabs
   const [activeTab, setActiveTab] = useState<'dashboard' | 'explorer' | 'duplicates' | 'analyzer' | 'reclassify' | 'management'>('dashboard');
@@ -288,9 +311,10 @@ export default function Home() {
   const [manualTasks, setManualTasks] = useState<{ id: string; label: string; description?: string; date: string; type: string; severity: 'high' | 'warning' | 'info' }[]>([]);
   const [newTaskLabel, setNewTaskLabel] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
-  const [newTaskDate, setNewTaskDate] = useState('2026-07-30');
   const [newTaskSeverity, setNewTaskSeverity] = useState<'high' | 'warning' | 'info'>('warning');
+  const [newTaskDate, setNewTaskDate] = useState(() => getTodayDateStringForSeverity('warning'));
   const [showAddTaskForm, setShowAddTaskForm] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 
   // Load manual tasks on mount
   useEffect(() => {
@@ -314,13 +338,30 @@ export default function Home() {
     }
   };
 
-  const handleAddManualTask = (e: React.FormEvent) => {
+  const handleStartEditManualTask = (task: any) => {
+    setEditingTaskId(task.id);
+    setNewTaskLabel(task.label);
+    setNewTaskDescription(task.description || '');
+    setNewTaskSeverity(task.severity);
+    
+    // Convert dd/mm/yyyy to yyyy-mm-dd
+    const parts = task.date.split('/');
+    if (parts.length === 3) {
+      setNewTaskDate(`${parts[2]}-${parts[1]}-${parts[0]}`);
+    } else {
+      setNewTaskDate(getTodayDateStringForSeverity(task.severity));
+    }
+    
+    setShowAddTaskForm(true);
+  };
+
+  const handleSaveManualTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskLabel.trim()) return;
 
     let taskDate = newTaskDate;
     if (!taskDate) {
-      const todayObj = new Date(2026, 6, 30);
+      const todayObj = new Date();
       const d = String(todayObj.getDate()).padStart(2, '0');
       const m = String(todayObj.getMonth() + 1).padStart(2, '0');
       const y = todayObj.getFullYear();
@@ -332,22 +373,42 @@ export default function Home() {
       }
     }
 
-    const newTask = {
-      id: `manual-${Date.now()}`,
-      label: newTaskLabel.trim(),
-      description: newTaskDescription.trim() || undefined,
-      date: taskDate,
-      type: '📌 Manuel',
-      severity: newTaskSeverity
-    };
+    if (editingTaskId) {
+      // Edit mode
+      const updated = manualTasks.map(t => {
+        if (t.id === editingTaskId) {
+          return {
+            ...t,
+            label: newTaskLabel.trim(),
+            description: newTaskDescription.trim() || undefined,
+            date: taskDate,
+            severity: newTaskSeverity
+          };
+        }
+        return t;
+      });
+      saveManualTasks(updated);
+      setEditingTaskId(null);
+      addToast('Tâche modifiée avec succès !', 'success');
+    } else {
+      // Add mode
+      const newTask = {
+        id: `manual-${Date.now()}`,
+        label: newTaskLabel.trim(),
+        description: newTaskDescription.trim() || undefined,
+        date: taskDate,
+        type: '📌 Manuel',
+        severity: newTaskSeverity
+      };
+      saveManualTasks([...manualTasks, newTask]);
+      addToast('Tâche ajoutée avec succès !', 'success');
+    }
 
-    saveManualTasks([...manualTasks, newTask]);
     setNewTaskLabel('');
     setNewTaskDescription('');
-    setNewTaskDate('2026-07-30');
     setNewTaskSeverity('warning');
+    setNewTaskDate(getTodayDateStringForSeverity('warning'));
     setShowAddTaskForm(false);
-    addToast('Tâche ajoutée avec succès !', 'success');
   };
 
   const handleDeleteManualTask = (id: string) => {
@@ -3040,8 +3101,8 @@ export default function Home() {
                   {/* Task List Panel (Top 5 Prioritaires) */}
                   {(() => {
                     const getPendingTasks = () => {
-                      const tasks: { id: string; label: string; date: string; type: string; severity: 'high' | 'warning' | 'info' }[] = [];
-                      const TODAY = new Date(2026, 6, 30); // 30 Juillet 2026
+                      const tasks: { id: string; label: string; description?: string; date: string; type: string; severity: 'high' | 'warning' | 'info' }[] = [];
+                      const TODAY = new Date(); // Aujourd'hui
 
                       const parseDateToObj = (dateStr: any) => {
                         if (!dateStr || typeof dateStr !== 'string') return null;
@@ -3201,11 +3262,26 @@ export default function Home() {
                             📋 Tâches Prioritaires à Réaliser ({pendingTasks.length})
                           </h4>
                           <button
-                            onClick={() => setShowAddTaskForm(prev => !prev)}
+                            onClick={() => {
+                              setShowAddTaskForm(prev => {
+                                const nextVal = !prev;
+                                if (nextVal) {
+                                  // Reset form states to default warning (Moyenne)
+                                  setNewTaskLabel('');
+                                  setNewTaskDescription('');
+                                  setNewTaskSeverity('warning');
+                                  setNewTaskDate(getTodayDateStringForSeverity('warning'));
+                                  setEditingTaskId(null);
+                                } else {
+                                  setEditingTaskId(null);
+                                }
+                                return nextVal;
+                              });
+                            }}
                             className="btn btn-secondary"
                             style={{ padding: '4px 12px', fontSize: '0.8rem', height: '28px', lineHeight: '1' }}
                           >
-                            {showAddTaskForm ? '❌ Fermer' : '➕ Ajouter'}
+                            {showAddTaskForm ? (editingTaskId ? '❌ Annuler' : '❌ Fermer') : '➕ Ajouter'}
                           </button>
                         </div>
                         
@@ -3274,23 +3350,42 @@ export default function Home() {
                                       Échéance : <strong>{t.date}</strong>
                                     </span>
                                     {t.type === '📌 Manuel' && (
-                                      <button
-                                        onClick={() => handleDeleteManualTask(t.id)}
-                                        style={{
-                                          background: 'rgba(0, 230, 118, 0.1)',
-                                          border: '1px solid rgba(0, 230, 118, 0.3)',
-                                          color: '#00e676',
-                                          cursor: 'pointer',
-                                          fontSize: '0.8rem',
-                                          fontWeight: 'bold',
-                                          padding: '4px 8px',
-                                          borderRadius: '4px',
-                                          transition: 'all 0.2s'
-                                        }}
-                                        title="Marquer comme accomplie (supprimer)"
-                                      >
-                                        ✓ Fait
-                                      </button>
+                                      <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button
+                                          onClick={() => handleStartEditManualTask(t)}
+                                          style={{
+                                            background: 'rgba(24, 144, 255, 0.1)',
+                                            border: '1px solid rgba(24, 144, 255, 0.3)',
+                                            color: '#1890ff',
+                                            cursor: 'pointer',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 'bold',
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            transition: 'all 0.2s'
+                                          }}
+                                          title="Modifier la tâche"
+                                        >
+                                          ✏️ Modifier
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeleteManualTask(t.id)}
+                                          style={{
+                                            background: 'rgba(0, 230, 118, 0.1)',
+                                            border: '1px solid rgba(0, 230, 118, 0.3)',
+                                            color: '#00e676',
+                                            cursor: 'pointer',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 'bold',
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            transition: 'all 0.2s'
+                                          }}
+                                          title="Marquer comme accomplie (supprimer)"
+                                        >
+                                          ✓ Fait
+                                        </button>
+                                      </div>
                                     )}
                                   </div>
                                 </div>
@@ -3301,7 +3396,7 @@ export default function Home() {
 
                         {/* Simple Manual Task Form */}
                         {showAddTaskForm && (
-                          <form onSubmit={handleAddManualTask} style={{ display: 'flex', gap: '10px', marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '15px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                          <form onSubmit={handleSaveManualTask} style={{ display: 'flex', gap: '10px', marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '15px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
                             <div style={{ flex: '1', minWidth: '150px' }}>
                               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '5px' }}>Titre :</label>
                               <input
@@ -3335,7 +3430,11 @@ export default function Home() {
                               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '5px' }}>Priorité :</label>
                               <select
                                 value={newTaskSeverity}
-                                onChange={(e) => setNewTaskSeverity(e.target.value as any)}
+                                onChange={(e) => {
+                                  const val = e.target.value as 'high' | 'warning' | 'info';
+                                  setNewTaskSeverity(val);
+                                  setNewTaskDate(getTodayDateStringForSeverity(val));
+                                }}
                                 style={{ width: '100%', padding: '8px', backgroundColor: '#0d1117', border: '1px solid var(--border-color)', borderRadius: '6px', color: '#ffffff', fontSize: '0.9rem' }}
                               >
                                 <option value="high">🔴 Élevée</option>
@@ -3348,7 +3447,7 @@ export default function Home() {
                               className="btn btn-primary"
                               style={{ padding: '8px 15px', height: '37px', fontSize: '0.9rem' }}
                             >
-                              ➕ Ajouter
+                              {editingTaskId ? '💾 Enregistrer' : '➕ Ajouter'}
                             </button>
                           </form>
                         )}

@@ -9,6 +9,7 @@ ai-skills-main/
 b-content-main/
 f-content-main/
 dj-scanner-api/
+downloads/
 
 # Node.js / Next.js builds and dependencies
 node_modules/
@@ -51,3 +52,13 @@ env/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# Fichiers audio
+*.mp3
+*.wav
+*.flac
+*.aiff
+*.m4a
+
+# Fichiers Rekordbox temporaires
+*.tmp
