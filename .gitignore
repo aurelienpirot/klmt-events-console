@@ -1,0 +1,53 @@
+# Security & Credentials
+.env
+config.env
+*.pem
+*.key
+
+# Large Boilerplates / Inactive Repositories
+ai-skills-main/
+b-content-main/
+f-content-main/
+dj-scanner-api/
+
+# Node.js / Next.js builds and dependencies
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Java / Spring Boot builds and outputs
+target/
+*.class
+*.jar
+*.war
+.m2custom/
+
+# Python compiled bytecode and caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Archives & Temporary exports
+*.zip
+*.tar
+*.gz
+*.rar
+
+# IDEs & System files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+Thumbs.db
+desktop.ini
+.DS_Store

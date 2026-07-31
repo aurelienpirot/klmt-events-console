@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DJ Music - Rapport de Doublons Flous (IA)</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --border-color: #30363d;
+            --text-color: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent-color: #9c27b0;
+            --accent-hover: #ba68c8;
+            --danger-color: #f43f5e;
+            --warning-color: #f59e0b;
+            --info-color: #3b82f6;
+            --success-color: #10b981;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 30px;
+            background: radial-gradient(circle at center, rgba(156, 39, 176, 0.15) 0%, transparent 70%);
+        }
+
+        h1 {
+            color: #ffffff;
+            margin: 0 0 10px 0;
+            font-size: 2.6rem;
+            letter-spacing: 1px;
+            text-shadow: 0 0 15px rgba(156, 39, 176, 0.6);
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        /* Stats Section */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 35px;
+        }
+
+        .stat-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card.fuzzy-match {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px rgba(156, 39, 176, 0.2);
+        }
+        .stat-card.fuzzy-match .stat-value {
+            color: #e040fb;
+        }
+
+        /* Filters Section */
+        .controls-panel {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 35px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 768px) {
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #ffffff;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .control-label span.value-display {
+            color: #e040fb;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        #search-input {
+            padding: 12px 18px;
+            font-size: 1rem;
+            background-color: #0d1117;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: #ffffff;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        #search-input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 8px rgba(156, 39, 176, 0.4);
+        }
+
+        /* Slider Styles */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #ratio-slider {
+            flex-grow: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: #21262d;
+            outline: none;
+        }
+
+        #ratio-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-hover);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(156, 39, 176, 0.8);
+            transition: background 0.2s;
+        }
+
+        #ratio-slider::-webkit-slider-thumb:hover {
+            background: #ffffff;
+        }
+
+        /* Duplicate Cards List */
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+
+        .list-header h2 {
+            margin: 0;
+            font-size: 1.4rem;
+            color: #ffffff;
+        }
+
+        .results-count {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .pair-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .pair-card:hover {
+            transform: translateY(-2px);
+            border-color: #484f58;
+            box-shadow: 0 6px 15px rgba(156, 39, 176, 0.1);
+        }
+
+        .card-header {
+            background-color: rgba(22, 27, 34, 0.6);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pair-id {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-badges {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            font-size: 0.8rem;
+            font-weight: bold;
+            padding: 5px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-danger {
+            background-color: rgba(244, 63, 94, 0.15);
+            color: #ff4a6b;
+            border: 1px solid rgba(244, 63, 94, 0.4);
+            box-shadow: 0 0 8px rgba(244, 63, 94, 0.2);
+        }
+
+        .badge-warning {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: #ffb020;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+
+        .badge-info {
+            background-color: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.4);
+        }
+
+        .badge-remix {
+            background-color: rgba(156, 39, 176, 0.15);
+            color: #e040fb;
+            border: 1px solid rgba(156, 39, 176, 0.4);
+            box-shadow: 0 0 8px rgba(156, 39, 176, 0.15);
+        }
+
+        .format-warning-badge {
+            font-size: 0.75rem;
+            background-color: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .size-warning-badge {
+            font-size: 0.75rem;
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .card-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: relative;
+        }
+
+        /* File Info Row Layout */
+        .file-info-row {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .file-letter {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.95rem;
+            flex-shrink: 0;
+            margin-top: 3px;
+        }
+
+        .letter-a {
+            background-color: rgba(156, 39, 176, 0.15);
+            color: #e040fb;
+            border: 1px solid rgba(156, 39, 176, 0.4);
+        }
+
+        .letter-b {
+            background-color: rgba(0, 188, 212, 0.15);
+            color: #00e5ff;
+            border: 1px solid rgba(0, 188, 212, 0.4);
+        }
+
+        .file-details {
+            flex-grow: 1;
+        }
+
+        .file-name {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 6px;
+            word-break: break-all;
+        }
+
+        .file-path {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+
+        .file-meta {
+            display: flex;
+            gap: 10px;
+        }
+
+        .meta-tag {
+            font-size: 0.75rem;
+            background-color: #21262d;
+            color: var(--text-muted);
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .ext-tag {
+            font-weight: bold;
+        }
+
+        .pair-divider {
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            margin: 5px 0;
+        }
+
+        .pair-divider::before, .pair-divider::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 45%;
+            height: 1px;
+            background-color: var(--border-color);
+        }
+
+        .pair-divider::before { left: 0; }
+        .pair-divider::after { right: 0; }
+
+        footer {
+            text-align: center;
+            padding: 40px 0 20px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 60px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔮 DJ Music Fuzzy Duplicate Finder (IA)</h1>
+            <p class="subtitle">Analyse intelligente par correspondance textuelle floue sur 192.168.0.12</p>
+        </header>
+
+        <section class="stats-grid">
+            <div class="stat-card fuzzy-match">
+                <div class="stat-value">26</div>
+                <div class="stat-label">Paires de Doublons Flous</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">16</div>
+                <div class="stat-label">Paires Critiques (&ge;90%)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">10</div>
+                <div class="stat-label">Paires formats différents</div>
+            </div>
+        </section>
+
+        <!-- Search and Threshold Sliders Panel -->
+        <section class="controls-panel">
+            <div class="controls-grid">
+                <!-- Search Input -->
+                <div class="control-group">
+                    <label class="control-label" for="search-input">Rechercher un morceau ou dossier</label>
+                    <input type="text" id="search-input" placeholder="🔍 Ex: Cece Peniston, Lagoa, Remix..." onkeyup="filterResults()">
+                </div>
+
+                <!-- Similarity Slider -->
+                <div class="control-group">
+                    <label class="control-label" for="ratio-slider">
+                        Taux de similarité minimal
+                        <span class="value-display" id="ratio-val">75%</span>
+                    </label>
+                    <div class="slider-container">
+                        <input type="range" id="ratio-slider" min="75" max="98" value="75" oninput="updateSliderValue(this.value); filterResults()">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Remix Filter Toggle -->
+            <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.95rem; font-weight: 600; color: #ffffff;">
+                    <input type="checkbox" id="hide-remixes" onchange="filterResults()" checked style="width: 18px; height: 18px; accent-color: var(--accent-color); cursor: pointer;">
+                    Masquer les remixes et versions différentes (garder les deux dans la collection)
+                </label>
+            </div>
+        </section>
+
+        <!-- Results section -->
+        <section class="results-section">
+            <div class="list-header">
+                <h2>📋 Liste des Doublons Classés par IA</h2>
+                <span class="results-count" id="results-count">Affichage de 26 paires</span>
+            </div>
+
+            <div id="pairs-list">
+                
+        <div class="pair-card" data-ratio="100" data-different-remix="false" data-filenames="201 - sash feat. rodriguez - ecuador.flac 302 - sash feat. rodriguez - ecuador.flac" data-paths="/clement/musique/03_dance_party/va-i_love_the_xx/201 - sash feat. rodriguez - ecuador.flac /clement/musique/03_dance_party/va-i_love_the_xx/302 - sash feat. rodriguez - ecuador.flac">
+            <div class="card-header">
+                <span class="pair-id">Paire #1</span>
+                <div class="card-badges">
+                    
+                    
+                    
+                    <span class="badge badge-danger">100% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 201 - Sash feat. Rodriguez - Ecuador.flac</div>
+                        <div class="file-path">📂 /Clement/musique/03_Dance_Party/VA-I_Love_The_XX/201 - Sash feat. Rodriguez - Ecuador.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">26.08 Mo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 302 - Sash feat. Rodriguez - Ecuador.flac</div>
+                        <div class="file-path">📂 /Clement/musique/03_Dance_Party/VA-I_Love_The_XX/302 - Sash feat. Rodriguez - Ecuador.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">26.59 Mo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="100" data-different-remix="false" data-filenames="00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.accurip 00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.cue" data-paths="/clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.accurip /clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.cue">
+            <div class="card-header">
+                <span class="pair-id">Paire #2</span>
+                <div class="card-badges">
+                    <span class="format-warning-badge">⚠️ Formats différents (.ACCURIP vs .CUE)</span>
+                    <span class="size-warning-badge">⚠️ Tailles différentes (1.73 Ko vs 2.28 Ko)</span>
+                    
+                    <span class="badge badge-danger">100% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.accurip</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.accurip</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.ACCURIP</span>
+                            <span class="meta-tag size-tag">1.73 Ko</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.cue</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.cue</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.CUE</span>
+                            <span class="meta-tag size-tag">2.28 Ko</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="100" data-different-remix="false" data-filenames="00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.accurip 00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.m3u" data-paths="/clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.accurip /clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.m3u">
+            <div class="card-header">
+                <span class="pair-id">Paire #3</span>
+                <div class="card-badges">
+                    <span class="format-warning-badge">⚠️ Formats différents (.ACCURIP vs .M3U)</span>
+                    <span class="size-warning-badge">⚠️ Tailles différentes (1.73 Ko vs 1.48 Ko)</span>
+                    
+                    <span class="badge badge-danger">100% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.accurip</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.accurip</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.ACCURIP</span>
+                            <span class="meta-tag size-tag">1.73 Ko</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.m3u</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.m3u</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.M3U</span>
+                            <span class="meta-tag size-tag">1.48 Ko</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="100" data-different-remix="false" data-filenames="00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.accurip 00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.nfo" data-paths="/clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.accurip /clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.nfo">
+            <div class="card-header">
+                <span class="pair-id">Paire #4</span>
+                <div class="card-badges">
+                    <span class="format-warning-badge">⚠️ Formats différents (.ACCURIP vs .NFO)</span>
+                    <span class="size-warning-badge">⚠️ Tailles différentes (1.73 Ko vs 3.18 Ko)</span>
+                    
+                    <span class="badge badge-danger">100% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.accurip</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.accurip</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.ACCURIP</span>
+                            <span class="meta-tag size-tag">1.73 Ko</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.nfo</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.nfo</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.NFO</span>
+                            <span class="meta-tag size-tag">3.18 Ko</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="100" data-different-remix="false" data-filenames="00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.accurip 00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.sfv" data-paths="/clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.accurip /clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.sfv">
+            <div class="card-header">
+                <span class="pair-id">Paire #5</span>
+                <div class="card-badges">
+                    <span class="format-warning-badge">⚠️ Formats différents (.ACCURIP vs .SFV)</span>
+                    
+                    
+                    <span class="badge badge-danger">100% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.accurip</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.accurip</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.ACCURIP</span>
+                            <span class="meta-tag size-tag">1.73 Ko</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.sfv</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.sfv</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.SFV</span>
+                            <span class="meta-tag size-tag">1.82 Ko</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="100" data-different-remix="false" data-filenames="00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.cue 00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.m3u" data-paths="/clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.cue /clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.m3u">
+            <div class="card-header">
+                <span class="pair-id">Paire #6</span>
+                <div class="card-badges">
+                    <span class="format-warning-badge">⚠️ Formats différents (.CUE vs .M3U)</span>
+                    <span class="size-warning-badge">⚠️ Tailles différentes (2.28 Ko vs 1.48 Ko)</span>
+                    
+                    <span class="badge badge-danger">100% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.cue</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.cue</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.CUE</span>
+                            <span class="meta-tag size-tag">2.28 Ko</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.m3u</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.m3u</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.M3U</span>
+                            <span class="meta-tag size-tag">1.48 Ko</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="100" data-different-remix="false" data-filenames="00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.cue 00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.nfo" data-paths="/clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.cue /clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.nfo">
+            <div class="card-header">
+                <span class="pair-id">Paire #7</span>
+                <div class="card-badges">
+                    <span class="format-warning-badge">⚠️ Formats différents (.CUE vs .NFO)</span>
+                    <span class="size-warning-badge">⚠️ Tailles différentes (2.28 Ko vs 3.18 Ko)</span>
+                    
+                    <span class="badge badge-danger">100% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.cue</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.cue</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.CUE</span>
+                            <span class="meta-tag size-tag">2.28 Ko</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.nfo</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.nfo</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.NFO</span>
+                            <span class="meta-tag size-tag">3.18 Ko</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="100" data-different-remix="false" data-filenames="00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.cue 00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.sfv" data-paths="/clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.cue /clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.sfv">
+            <div class="card-header">
+                <span class="pair-id">Paire #8</span>
+                <div class="card-badges">
+                    <span class="format-warning-badge">⚠️ Formats différents (.CUE vs .SFV)</span>
+                    <span class="size-warning-badge">⚠️ Tailles différentes (2.28 Ko vs 1.82 Ko)</span>
+                    
+                    <span class="badge badge-danger">100% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.cue</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.cue</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.CUE</span>
+                            <span class="meta-tag size-tag">2.28 Ko</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.sfv</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.sfv</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.SFV</span>
+                            <span class="meta-tag size-tag">1.82 Ko</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="100" data-different-remix="false" data-filenames="00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.m3u 00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.nfo" data-paths="/clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.m3u /clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.nfo">
+            <div class="card-header">
+                <span class="pair-id">Paire #9</span>
+                <div class="card-badges">
+                    <span class="format-warning-badge">⚠️ Formats différents (.M3U vs .NFO)</span>
+                    <span class="size-warning-badge">⚠️ Tailles différentes (1.48 Ko vs 3.18 Ko)</span>
+                    
+                    <span class="badge badge-danger">100% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.m3u</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.m3u</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.M3U</span>
+                            <span class="meta-tag size-tag">1.48 Ko</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.nfo</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.nfo</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.NFO</span>
+                            <span class="meta-tag size-tag">3.18 Ko</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="100" data-different-remix="false" data-filenames="00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.m3u 00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.sfv" data-paths="/clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.m3u /clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.sfv">
+            <div class="card-header">
+                <span class="pair-id">Paire #10</span>
+                <div class="card-badges">
+                    <span class="format-warning-badge">⚠️ Formats différents (.M3U vs .SFV)</span>
+                    <span class="size-warning-badge">⚠️ Tailles différentes (1.48 Ko vs 1.82 Ko)</span>
+                    
+                    <span class="badge badge-danger">100% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.m3u</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.m3u</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.M3U</span>
+                            <span class="meta-tag size-tag">1.48 Ko</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.sfv</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.sfv</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.SFV</span>
+                            <span class="meta-tag size-tag">1.82 Ko</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="100" data-different-remix="false" data-filenames="00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.nfo 00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.sfv" data-paths="/clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.nfo /clement/musique/11_techno/lagoa/lagoa 16th birthday celebration [records mania; rm cd13; 2006; 2cd; mixed]/00 - 00 va - lagoa 16th birthday celebration-(rm cd13)-2cd-flac-2006.sfv">
+            <div class="card-header">
+                <span class="pair-id">Paire #11</span>
+                <div class="card-badges">
+                    <span class="format-warning-badge">⚠️ Formats différents (.NFO vs .SFV)</span>
+                    <span class="size-warning-badge">⚠️ Tailles différentes (3.18 Ko vs 1.82 Ko)</span>
+                    
+                    <span class="badge badge-danger">100% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.nfo</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.nfo</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.NFO</span>
+                            <span class="meta-tag size-tag">3.18 Ko</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.sfv</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/Lagoa 16th Birthday Celebration [Records Mania; RM CD13; 2006; 2CD; Mixed]/00 - 00 VA - Lagoa 16th Birthday Celebration-(rm Cd13)-2cd-flac-2006.sfv</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.SFV</span>
+                            <span class="meta-tag size-tag">1.82 Ko</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="100" data-different-remix="false" data-filenames="082 - crazy.flac 026 - crazy.flac" data-paths="/clement/musique/12_soiree/082 - crazy.flac /clement/musique/13_soirée ag/026 - crazy.flac">
+            <div class="card-header">
+                <span class="pair-id">Paire #12</span>
+                <div class="card-badges">
+                    
+                    
+                    
+                    <span class="badge badge-danger">100% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 082 - Crazy.flac</div>
+                        <div class="file-path">📂 /Clement/musique/12_Soiree/082 - Crazy.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">21.39 Mo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 026 - Crazy.flac</div>
+                        <div class="file-path">📂 /Clement/musique/13_Soirée AG/026 - Crazy.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">21.39 Mo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="100" data-different-remix="false" data-filenames="092 - cola - camelphat & elderbrook.flac 038 - cola - camelphat & elderbrook.flac" data-paths="/clement/musique/12_soiree/092 - cola - camelphat & elderbrook.flac /clement/musique/13_soirée ag/038 - cola - camelphat & elderbrook.flac">
+            <div class="card-header">
+                <span class="pair-id">Paire #13</span>
+                <div class="card-badges">
+                    
+                    
+                    
+                    <span class="badge badge-danger">100% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 092 - Cola - Camelphat & Elderbrook.flac</div>
+                        <div class="file-path">📂 /Clement/musique/12_Soiree/092 - Cola - Camelphat & Elderbrook.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">28.79 Mo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 038 - Cola - Camelphat & Elderbrook.flac</div>
+                        <div class="file-path">📂 /Clement/musique/13_Soirée AG/038 - Cola - Camelphat & Elderbrook.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">28.79 Mo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="100" data-different-remix="false" data-filenames="103 - catch and release (deepend remix) - matt simons.flac 051 - catch and release (deepend remix) - matt simons.flac" data-paths="/clement/musique/12_soiree/103 - catch and release (deepend remix) - matt simons.flac /clement/musique/13_soirée ag/051 - catch and release (deepend remix) - matt simons.flac">
+            <div class="card-header">
+                <span class="pair-id">Paire #14</span>
+                <div class="card-badges">
+                    
+                    
+                    
+                    <span class="badge badge-danger">100% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 103 - Catch and Release (deepend Remix) - Matt Simons.flac</div>
+                        <div class="file-path">📂 /Clement/musique/12_Soiree/103 - Catch and Release (deepend Remix) - Matt Simons.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">19.14 Mo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 051 - Catch and Release (deepend Remix) - Matt Simons.flac</div>
+                        <div class="file-path">📂 /Clement/musique/13_Soirée AG/051 - Catch and Release (deepend Remix) - Matt Simons.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">19.14 Mo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="98" data-different-remix="true" data-filenames="113 - incognito feat. jocelyn brown - always there.flac 302 - incgnito feat. jocelyn brown - always there.flac" data-paths="/clement/musique/03_dance_party/va-i_love_the_xx/113 - incognito feat. jocelyn brown - always there.flac /clement/musique/03_dance_party/va-i_love_the_xx/302 - incgnito feat. jocelyn brown - always there.flac">
+            <div class="card-header">
+                <span class="pair-id">Paire #15</span>
+                <div class="card-badges">
+                    
+                    <span class="size-warning-badge">⚠️ Tailles différentes (25.97 Mo vs 9.33 Mo)</span>
+                    <span class="badge badge-remix">🎧 Remixes différents</span>
+                    <span class="badge badge-danger">98% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 113 - Incognito feat. Jocelyn Brown - Always There.flac</div>
+                        <div class="file-path">📂 /Clement/musique/03_Dance_Party/VA-I_Love_The_XX/113 - Incognito feat. Jocelyn Brown - Always There.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">25.97 Mo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 302 - Incgnito feat. Jocelyn Brown - Always There.flac</div>
+                        <div class="file-path">📂 /Clement/musique/03_Dance_Party/VA-I_Love_The_XX/302 - Incgnito feat. Jocelyn Brown - Always There.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">9.33 Mo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="91" data-different-remix="true" data-filenames="rafael cerato & laherte - proximity feat. jonatan bäckelie (fatum remix).mp3 rafael cerato, laherte - proximity feat. jonatan bäckelie (rauschhaus remix).mp3" data-paths="/clement/musique/08_house/club/house club/rafael cerato & laherte - proximity feat. jonatan bäckelie (fatum remix).mp3 /clement/musique/08_house/club/house club/rafael cerato, laherte - proximity feat. jonatan bäckelie (rauschhaus remix).mp3">
+            <div class="card-header">
+                <span class="pair-id">Paire #16</span>
+                <div class="card-badges">
+                    
+                    
+                    <span class="badge badge-remix">🎧 Remixes différents</span>
+                    <span class="badge badge-danger">91% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 Rafael Cerato & Laherte - Proximity feat. Jonatan Bäckelie (fatum Remix).mp3</div>
+                        <div class="file-path">📂 /Clement/musique/08_House/Club/House Club/Rafael Cerato & Laherte - Proximity feat. Jonatan Bäckelie (fatum Remix).mp3</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.MP3</span>
+                            <span class="meta-tag size-tag">14.25 Mo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 Rafael Cerato, Laherte - Proximity feat. Jonatan Bäckelie (rauschhaus Remix).mp3</div>
+                        <div class="file-path">📂 /Clement/musique/08_House/Club/House Club/Rafael Cerato, Laherte - Proximity feat. Jonatan Bäckelie (rauschhaus Remix).mp3</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.MP3</span>
+                            <span class="meta-tag size-tag">14.25 Mo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="86" data-different-remix="true" data-filenames="darius syrossian, olive f, fountain sound - cereal groover feat. fountain sound extended mix.mp3 darius syrossian, olive f, fountain sound - cereal killer feat. fountain sound original mix.mp3" data-paths="/clement/musique/08_house/club/house club/darius syrossian, olive f, fountain sound - cereal groover feat. fountain sound extended mix.mp3 /clement/musique/08_house/club/house club/darius syrossian, olive f, fountain sound - cereal killer feat. fountain sound original mix.mp3">
+            <div class="card-header">
+                <span class="pair-id">Paire #17</span>
+                <div class="card-badges">
+                    
+                    <span class="size-warning-badge">⚠️ Tailles différentes (12.16 Mo vs 14.71 Mo)</span>
+                    <span class="badge badge-remix">🎧 Remixes différents</span>
+                    <span class="badge badge-warning">86% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 Darius Syrossian, Olive F, Fountain Sound - Cereal Groover feat. Fountain Sound Extended Mix.mp3</div>
+                        <div class="file-path">📂 /Clement/musique/08_House/Club/House Club/Darius Syrossian, Olive F, Fountain Sound - Cereal Groover feat. Fountain Sound Extended Mix.mp3</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.MP3</span>
+                            <span class="meta-tag size-tag">12.16 Mo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 Darius Syrossian, Olive F, Fountain Sound - Cereal Killer feat. Fountain Sound Original Mix.mp3</div>
+                        <div class="file-path">📂 /Clement/musique/08_House/Club/House Club/Darius Syrossian, Olive F, Fountain Sound - Cereal Killer feat. Fountain Sound Original Mix.mp3</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.MP3</span>
+                            <span class="meta-tag size-tag">14.71 Mo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="84" data-different-remix="true" data-filenames="122 - all stars (club mix) - martin solveig.flac 122 - all stars - martin solveig.flac" data-paths="/clement/musique/12_soiree/122 - all stars (club mix) - martin solveig.flac /clement/musique/12_soiree/122 - all stars - martin solveig.flac">
+            <div class="card-header">
+                <span class="pair-id">Paire #18</span>
+                <div class="card-badges">
+                    
+                    <span class="size-warning-badge">⚠️ Tailles différentes (49.50 Mo vs 20.29 Mo)</span>
+                    <span class="badge badge-remix">🎧 Remixes différents</span>
+                    <span class="badge badge-warning">84% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 122 - All Stars (club Mix) - Martin Solveig.flac</div>
+                        <div class="file-path">📂 /Clement/musique/12_Soiree/122 - All Stars (club Mix) - Martin Solveig.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">49.50 Mo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 122 - All Stars - Martin Solveig.flac</div>
+                        <div class="file-path">📂 /Clement/musique/12_Soiree/122 - All Stars - Martin Solveig.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">20.29 Mo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="83" data-different-remix="true" data-filenames="020 - el ritmo de verdad lego (extended).flac 020 - el ritmo de verdad lego.flac" data-paths="/clement/musique/12_soiree/020 - el ritmo de verdad lego (extended).flac /clement/musique/12_soiree/020 - el ritmo de verdad lego.flac">
+            <div class="card-header">
+                <span class="pair-id">Paire #19</span>
+                <div class="card-badges">
+                    
+                    <span class="size-warning-badge">⚠️ Tailles différentes (42.38 Mo vs 31.55 Mo)</span>
+                    <span class="badge badge-remix">🎧 Remixes différents</span>
+                    <span class="badge badge-warning">83% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 020 - El Ritmo De Verdad Lego (extended).flac</div>
+                        <div class="file-path">📂 /Clement/musique/12_Soiree/020 - El Ritmo De Verdad Lego (extended).flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">42.38 Mo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 020 - El Ritmo De Verdad Lego.flac</div>
+                        <div class="file-path">📂 /Clement/musique/12_Soiree/020 - El Ritmo De Verdad Lego.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">31.55 Mo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="81" data-different-remix="true" data-filenames="san pacho - no guest list (jaded remix).mp3 san pacho - no guest list (original mix).mp3" data-paths="/clement/musique/08_house/club/house club/san pacho - no guest list (jaded remix).mp3 /clement/musique/08_house/club/house club/san pacho - no guest list (original mix).mp3">
+            <div class="card-header">
+                <span class="pair-id">Paire #20</span>
+                <div class="card-badges">
+                    
+                    <span class="size-warning-badge">⚠️ Tailles différentes (12.81 Mo vs 10.30 Mo)</span>
+                    <span class="badge badge-remix">🎧 Remixes différents</span>
+                    <span class="badge badge-warning">81% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 San Pacho - No Guest List (jaded Remix).mp3</div>
+                        <div class="file-path">📂 /Clement/musique/08_House/Club/House Club/San Pacho - No Guest List (jaded Remix).mp3</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.MP3</span>
+                            <span class="meta-tag size-tag">12.81 Mo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 San Pacho - No Guest List (original Mix).mp3</div>
+                        <div class="file-path">📂 /Clement/musique/08_House/Club/House Club/San Pacho - No Guest List (original Mix).mp3</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.MP3</span>
+                            <span class="meta-tag size-tag">10.30 Mo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="81" data-different-remix="true" data-filenames="02 - sing it back (boris musical mix edit).flac 411 - moloko - sing it back (boris dlugosch musical mix edit).flac" data-paths="/clement/musique/01 - cocktail/house/chill/02 - sing it back (boris musical mix edit).flac /clement/musique/03_dance_party/va-i_love_the_xx/411 - moloko - sing it back (boris dlugosch musical mix edit).flac">
+            <div class="card-header">
+                <span class="pair-id">Paire #21</span>
+                <div class="card-badges">
+                    
+                    <span class="size-warning-badge">⚠️ Tailles différentes (36.83 Mo vs 12.52 Mo)</span>
+                    <span class="badge badge-remix">🎧 Remixes différents</span>
+                    <span class="badge badge-warning">81% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 02 - Sing It Back (boris Musical Mix Edit).flac</div>
+                        <div class="file-path">📂 /Clement/musique/01 - Cocktail/House/chill/02 - Sing It Back (boris Musical Mix Edit).flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">36.83 Mo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 411 - Moloko - Sing It Back (boris Dlugosch Musical Mix Edit).flac</div>
+                        <div class="file-path">📂 /Clement/musique/03_Dance_Party/VA-I_Love_The_XX/411 - Moloko - Sing It Back (boris Dlugosch Musical Mix Edit).flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">12.52 Mo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="81" data-different-remix="true" data-filenames="011 - ronan remix - the rhythm of the night.flac 106 - 106-corona - the rhythm of the night.flac" data-paths="/clement/musique/01 - cocktail/lounge/011 - ronan remix - the rhythm of the night.flac /clement/musique/03_dance_party/va-i_love_the_xx/106 - 106-corona - the rhythm of the night.flac">
+            <div class="card-header">
+                <span class="pair-id">Paire #22</span>
+                <div class="card-badges">
+                    
+                    <span class="size-warning-badge">⚠️ Tailles différentes (24.38 Mo vs 31.59 Mo)</span>
+                    <span class="badge badge-remix">🎧 Remixes différents</span>
+                    <span class="badge badge-warning">81% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 011 - Ronan Remix - The Rhythm of the Night.flac</div>
+                        <div class="file-path">📂 /Clement/musique/01 - Cocktail/lounge/011 - Ronan Remix - The Rhythm of the Night.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">24.38 Mo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 106 - 106-corona - The Rhythm of the Night.flac</div>
+                        <div class="file-path">📂 /Clement/musique/03_Dance_Party/VA-I_Love_The_XX/106 - 106-corona - The Rhythm of the Night.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">31.59 Mo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="80" data-different-remix="true" data-filenames="andrey exx & turaniqa - touch me (hiwater remix).mp3 andrey exx & turaniqa - touch me.mp3" data-paths="/clement/musique/08_house/club/house club/andrey exx & turaniqa - touch me (hiwater remix).mp3 /clement/musique/08_house/club/house club/andrey exx & turaniqa - touch me.mp3">
+            <div class="card-header">
+                <span class="pair-id">Paire #23</span>
+                <div class="card-badges">
+                    
+                    <span class="size-warning-badge">⚠️ Tailles différentes (12.09 Mo vs 14.73 Mo)</span>
+                    <span class="badge badge-remix">🎧 Remixes différents</span>
+                    <span class="badge badge-warning">80% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 Andrey Exx & Turaniqa - Touch Me (hiwater Remix).mp3</div>
+                        <div class="file-path">📂 /Clement/musique/08_House/Club/House Club/Andrey Exx & Turaniqa - Touch Me (hiwater Remix).mp3</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.MP3</span>
+                            <span class="meta-tag size-tag">12.09 Mo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 Andrey Exx & Turaniqa - Touch Me.mp3</div>
+                        <div class="file-path">📂 /Clement/musique/08_House/Club/House Club/Andrey Exx & Turaniqa - Touch Me.mp3</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.MP3</span>
+                            <span class="meta-tag size-tag">14.73 Mo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="80" data-different-remix="true" data-filenames="138 - tokyo drift - afro house (radio edit).flac 138 - tokyo-drift-afro-house.flac" data-paths="/clement/musique/12_soiree/138 - tokyo drift - afro house (radio edit).flac /clement/musique/12_soiree/138 - tokyo-drift-afro-house.flac">
+            <div class="card-header">
+                <span class="pair-id">Paire #24</span>
+                <div class="card-badges">
+                    
+                    <span class="size-warning-badge">⚠️ Tailles différentes (18.43 Mo vs 53.74 Mo)</span>
+                    <span class="badge badge-remix">🎧 Remixes différents</span>
+                    <span class="badge badge-warning">80% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 138 - Tokyo Drift - Afro House (radio Edit).flac</div>
+                        <div class="file-path">📂 /Clement/musique/12_Soiree/138 - Tokyo Drift - Afro House (radio Edit).flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">18.43 Mo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 138 - Tokyo-drift-afro-house.flac</div>
+                        <div class="file-path">📂 /Clement/musique/12_Soiree/138 - Tokyo-drift-afro-house.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">53.74 Mo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="78" data-different-remix="true" data-filenames="103 - qu'est-ce que vous voulez.flac 218 - quest - ce que vous voulez - the amazing.flac" data-paths="/clement/musique/11_techno/lagoa/103 - qu'est-ce que vous voulez.flac /clement/musique/11_techno/lagoa/218 - quest - ce que vous voulez - the amazing.flac">
+            <div class="card-header">
+                <span class="pair-id">Paire #25</span>
+                <div class="card-badges">
+                    
+                    <span class="size-warning-badge">⚠️ Tailles différentes (39.13 Mo vs 26.08 Mo)</span>
+                    <span class="badge badge-remix">🎧 Remixes différents</span>
+                    <span class="badge badge-info">78% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 103 - Qu'est-ce Que Vous Voulez.flac</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/103 - Qu'est-ce Que Vous Voulez.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">39.13 Mo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 218 - Quest - Ce Que Vous Voulez - the Amazing.flac</div>
+                        <div class="file-path">📂 /Clement/musique/11_Techno/Lagoa/218 - Quest - Ce Que Vous Voulez - the Amazing.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">26.08 Mo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="pair-card" data-ratio="78" data-different-remix="true" data-filenames="uefa - uefa champions league anthem 2425 (full version).flac uefa - uefa champions league anthem.flac" data-paths="/clement/musique/10_intro_effets/uefa - uefa champions league anthem 2425 (full version).flac /clement/musique/10_intro_effets/uefa - uefa champions league anthem.flac">
+            <div class="card-header">
+                <span class="pair-id">Paire #26</span>
+                <div class="card-badges">
+                    
+                    <span class="size-warning-badge">⚠️ Tailles différentes (13.38 Mo vs 4.65 Mo)</span>
+                    <span class="badge badge-remix">🎧 Remixes différents</span>
+                    <span class="badge badge-info">78% de similarité</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- File A -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-a">A</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 Uefa - Uefa Champions League Anthem 2425 (full Version).flac</div>
+                        <div class="file-path">📂 /Clement/musique/10_Intro_Effets/Uefa - Uefa Champions League Anthem 2425 (full Version).flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">13.38 Mo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pair-divider">vs</div>
+
+                <!-- File B -->
+                <div class="file-info-row">
+                    <div class="file-letter letter-b">B</div>
+                    <div class="file-details">
+                        <div class="file-name">🎵 Uefa - Uefa Champions League Anthem.flac</div>
+                        <div class="file-path">📂 /Clement/musique/10_Intro_Effets/Uefa - Uefa Champions League Anthem.flac</div>
+                        <div class="file-meta">
+                            <span class="meta-tag ext-tag">.FLAC</span>
+                            <span class="meta-tag size-tag">4.65 Mo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+            </div>
+        </section>
+
+        <footer>
+            Développé par Gemini CLI &bull; DJ Music Assistant 2026
+        </footer>
+    </div>
+
+    <script>
+        function updateSliderValue(val) {
+            document.getElementById('ratio-val').textContent = val + '%';
+        }
+
+        function filterResults() {
+            const searchInput = document.getElementById('search-input');
+            const filterText = searchInput.value.toLowerCase();
+            
+            const slider = document.getElementById('ratio-slider');
+            const minRatio = parseInt(slider.value);
+            
+            const hideRemixes = document.getElementById('hide-remixes').checked;
+            
+            const cards = document.querySelectorAll('.pair-card');
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const cardRatio = parseInt(card.getAttribute('data-ratio'));
+                const filenames = card.getAttribute('data-filenames');
+                const paths = card.getAttribute('data-paths');
+                const isRemix = card.getAttribute('data-different-remix') === 'true';
+
+                const matchesSearch = filenames.includes(filterText) || paths.includes(filterText);
+                const matchesRatio = cardRatio >= minRatio;
+                const matchesRemix = !hideRemixes || !isRemix;
+
+                if (matchesSearch && matchesRatio && matchesRemix) {
+                    card.style.display = "";
+                    visibleCount++;
+                } else {
+                    card.style.display = "none";
+                }
+            });
+
+            const countEl = document.getElementById('results-count');
+            countEl.textContent = "Affichage de " + visibleCount + " paire(s) sur " + cards.length;
+        }
+        
+        // Run initial filter to respect default checkbox value
+        window.onload = function() {
+            filterResults();
+        };
+    </script>
+</body>
+</html>
