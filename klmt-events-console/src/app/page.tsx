@@ -41,15 +41,16 @@ export default function Home() {
 
   const refreshAllData = async () => {
     try {
-      const [resClients, resRecettes, resDf, resContrats, resIndisp] = await Promise.all([
+      const [resClients, resRecettes, resDf, resContrats, resIndisp, resTasks] = await Promise.all([
         fetch('/api/clients').then(r => r.json()),
         fetch('/api/recettes').then(r => r.json()),
         fetch('/api/devis-factures').then(r => r.json()),
         fetch('/api/contrats').then(r => r.json()),
-        fetch('/api/indisponibilites').then(r => r.json())
+        fetch('/api/indisponibilites').then(r => r.json()),
+        fetch('/api/tasks').then(r => r.json())
       ]);
       
-      if (resClients.error || resRecettes.error || resDf.error || resContrats.error || resIndisp.error) {
+      if (resClients.error || resRecettes.error || resDf.error || resContrats.error || resIndisp.error || resTasks.error) {
         throw new Error("Certaines requêtes d'API ont échoué.");
       }
 
@@ -58,6 +59,7 @@ export default function Home() {
       setDevisFactures(resDf);
       setContrats(resContrats);
       setIndisponibilites(resIndisp);
+      setManualTasks(resTasks);
       setError(null);
     } catch (err: any) {
       console.error(err);
@@ -70,18 +72,22 @@ export default function Home() {
 
   useEffect(() => {
     refreshAllData();
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('klmt_manual_tasks');
-      if (stored) {
-        try { setManualTasks(JSON.parse(stored)); } catch (e) { console.error(e); }
-      }
-    }
   }, []);
 
-  const saveManualTasks = (tasks: any[]) => {
+  const saveManualTasks = async (tasks: any[]) => {
     setManualTasks(tasks);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('klmt_manual_tasks', JSON.stringify(tasks));
+    try {
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(tasks)
+      });
+      if (!response.ok) {
+        addToast("Erreur lors de la sauvegarde de la tâche.", "error");
+      }
+    } catch (e) {
+      console.error(e);
+      addToast("Erreur lors de la sauvegarde de la tâche.", "error");
     }
   };
 

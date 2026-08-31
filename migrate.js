@@ -87,6 +87,13 @@ async function runMigration() {
       await db.collection('indisponibilites').insertMany(data.indisponibilites);
     }
 
+    // Tâches manuelles
+    if (data.manualTasks && data.manualTasks.length > 0) {
+      console.log(`➡️ Téléversement de ${data.manualTasks.length} tâches manuelles...`);
+      await db.collection('manualTasks').deleteMany({});
+      await db.collection('manualTasks').insertMany(data.manualTasks);
+    }
+
     console.log("\n✨ MIGRATION RÉUSSIE AVEC SUCCÈS ! ✨");
     console.log("Toutes vos données locales (La laiterie, devis, contrats...) sont désormais enregistrées sur MongoDB Atlas dans la base 'klmt-events'.");
     console.log("Votre console Vercel est maintenant prête à s'afficher avec vos vraies données !");

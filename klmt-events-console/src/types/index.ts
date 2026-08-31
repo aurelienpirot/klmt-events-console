@@ -61,3 +61,12 @@ export interface Indisponibilite {
   date: string; // Format "DD/MM/YYYY"
   motif: string;
 }
+
+export interface ManualTask {
+  id: string;
+  label: string;
+  description?: string;
+  date: string;
+  severity: 'high' | 'warning' | 'info';
+  type: '📌 Manuel';
+}
