@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { readData, writeData, generateUUID } from '@/lib/db';
 import { Client } from '@/types';

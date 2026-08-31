@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { readData, writeData } from '@/lib/db';
 import { ManualTask } from '@/types';
