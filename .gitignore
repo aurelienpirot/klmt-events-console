@@ -62,3 +62,7 @@ desktop.ini
 
 # Fichiers Rekordbox temporaires
 *.tmp
+
+# Captures d'écran temporaires d'analyse
+Capture d’écran *.png
+*.png

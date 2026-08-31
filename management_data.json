@@ -1,264 +1,39 @@
 {
-  "recettes" : [ {
-    "id" : "recette-0",
-    "dateEncaissement" : "KLMT Events - Livre des Recettes",
-    "numeroFacture" : "",
-    "client" : "",
-    "naturePrestation" : "",
-    "montantHt" : 0.0,
-    "modeReglement" : ""
-  }, {
-    "id" : "recette-4",
-    "dateEncaissement" : "15/08/2026",
-    "numeroFacture" : "F2026-001",
-    "client" : "Bar Le Central",
-    "naturePrestation" : "Prestation DJ + Son (Woodbrass)",
-    "montantHt" : 250.0,
-    "modeReglement" : "Virement"
-  }, {
-    "id" : "recette-5",
-    "dateEncaissement" : "12/09/2026",
-    "numeroFacture" : "F2026-002",
-    "client" : "Privé (Anniversaire)",
-    "naturePrestation" : "Prestation DJ + Son (Woodbrass)",
-    "montantHt" : 250.0,
-    "modeReglement" : "Virement"
-  }, {
-    "id" : "recette-6",
-    "dateEncaissement" : "17/10/2026",
-    "numeroFacture" : "F2026-003",
-    "client" : "Bar O'Clock",
-    "naturePrestation" : "Prestation DJ seule (Régie équipée)",
-    "montantHt" : 200.0,
-    "modeReglement" : "Chèque"
-  }, {
-    "id" : "recette-e8d4d394",
-    "dateEncaissement" : "29/07/2026",
-    "numeroFacture" : "F2026-004",
-    "client" : "Bar Le Central",
-    "naturePrestation" : "Afterwork",
-    "montantHt" : 70.0,
-    "modeReglement" : "Virement"
-  }, {
-    "id" : "recette-88aaf26f",
-    "dateEncaissement" : "29/07/2026",
-    "numeroFacture" : "F2026-004",
-    "client" : "Bar Le Central",
-    "naturePrestation" : "Afterwork",
-    "montantHt" : 200.0,
-    "modeReglement" : "Virement"
-  } ],
-  "clients" : [ {
-    "id" : "client-1",
-    "nom" : "Bar Le Central",
-    "adresse" : "12 Rue de la Paix, 44000 Nantes",
-    "email" : "contact@barlecentral.fr",
-    "telephone" : "02 40 00 11 22"
-  }, {
-    "id" : "client-2",
-    "nom" : "Privé (Anniversaire)",
-    "adresse" : "Salle des Fêtes, 44470 Carquefou",
-    "email" : "anniv.prive@gmail.com",
-    "telephone" : "06 12 34 56 78"
-  }, {
-    "id" : "client-3",
-    "nom" : "Bar O'Clock",
-    "adresse" : "45 Rue de la Soif, 44000 Nantes",
-    "email" : "info@baroclock.com",
-    "telephone" : "02 40 99 88 77"
-  } ],
-  "devisFactures" : [ {
-    "id" : "facture-1",
-    "numero" : "F2026-001",
-    "type" : "FACTURE",
-    "dateEmission" : "15/08/2026",
-    "datePrestation" : "15/08/2026",
-    "clientNom" : "Bar Le Central",
-    "clientAdresse" : "12 Rue de la Paix, 44000 Nantes",
-    "validite" : "À réception de facture",
-    "items" : [ {
-      "designation" : "Prestation artistique DJ (Animation Live - Horaires: 22h00 - 02h00)",
-      "quantite" : 1.0,
-      "unite" : "Forfait",
-      "prixUnitaire" : 180.0,
-      "montant" : 180.0
-    }, {
-      "designation" : "Mise à disposition sonorisation mobile Woodbrass Stage Power 210",
-      "quantite" : 1.0,
-      "unite" : "Forfait",
-      "prixUnitaire" : 70.0,
-      "montant" : 70.0
-    }, {
-      "designation" : "Frais de déplacement (Distance inférieure à 15 km)",
-      "quantite" : 1.0,
-      "unite" : "Km",
-      "prixUnitaire" : 0.0,
-      "montant" : 0.0
-    } ],
-    "totalHt" : 250.0,
-    "totalTtc" : 250.0,
-    "acompte" : 75.0,
-    "status" : "PAYÉ",
-    "modeReglement" : "Virement",
-    "rib" : "[Insérer RIB Revolut / N26 de Clément]"
-  }, {
-    "id" : "facture-2",
-    "numero" : "F2026-002",
-    "type" : "FACTURE",
-    "dateEmission" : "12/09/2026",
-    "datePrestation" : "12/09/2026",
-    "clientNom" : "Privé (Anniversaire)",
-    "clientAdresse" : "Salle des Fêtes, 44470 Carquefou",
-    "validite" : "À réception de facture",
-    "items" : [ {
-      "designation" : "Prestation artistique DJ (Animation Live - Horaires: 22h00 - 02h00)",
-      "quantite" : 1.0,
-      "unite" : "Forfait",
-      "prixUnitaire" : 180.0,
-      "montant" : 180.0
-    }, {
-      "designation" : "Mise à disposition sonorisation mobile Woodbrass Stage Power 210",
-      "quantite" : 1.0,
-      "unite" : "Forfait",
-      "prixUnitaire" : 70.0,
-      "montant" : 70.0
-    }, {
-      "designation" : "Frais de déplacement (Distance inférieure à 15 km)",
-      "quantite" : 1.0,
-      "unite" : "Km",
-      "prixUnitaire" : 0.0,
-      "montant" : 0.0
-    } ],
-    "totalHt" : 250.0,
-    "totalTtc" : 250.0,
-    "acompte" : 75.0,
-    "status" : "PAYÉ",
-    "modeReglement" : "Virement",
-    "rib" : "[Insérer RIB Revolut / N26 de Clément]"
-  }, {
-    "id" : "facture-3",
-    "numero" : "F2026-003",
-    "type" : "FACTURE",
-    "dateEmission" : "17/10/2026",
-    "datePrestation" : "17/10/2026",
-    "clientNom" : "Bar O'Clock",
-    "clientAdresse" : "45 Rue de la Soif, 44000 Nantes",
-    "validite" : "À réception de facture",
-    "items" : [ {
-      "designation" : "Prestation artistique DJ seule (Régie équipée)",
-      "quantite" : 1.0,
-      "unite" : "Forfait",
-      "prixUnitaire" : 200.0,
-      "montant" : 200.0
-    } ],
-    "totalHt" : 200.0,
-    "totalTtc" : 200.0,
-    "acompte" : 0.0,
-    "status" : "PAYÉ",
-    "modeReglement" : "Chèque",
-    "rib" : "[Insérer RIB Revolut / N26 de Clément]"
-  }, {
-    "id" : "df-19974498",
-    "numero" : "F2026-004",
-    "type" : "FACTURE",
-    "dateEmission" : "29/07/2026",
-    "datePrestation" : "29/07/2026",
-    "clientNom" : "Bar Le Central",
-    "clientAdresse" : "12 Rue de la Paix, 44000 Nantes",
-    "validite" : "À réception de facture",
-    "items" : [ {
-      "designation" : "Afterwork",
-      "quantite" : 1.0,
-      "unite" : "Forfait",
-      "prixUnitaire" : 270.0,
-      "montant" : 270.0
-    } ],
-    "totalHt" : 270.0,
-    "totalTtc" : 270.0,
-    "acompte" : 70.0,
-    "status" : "PAYÉ",
-    "modeReglement" : "Virement",
-    "rib" : "[Insérer RIB Revolut / N26 de Clément]"
-  }, {
-    "id" : "df-f65ab2df",
-    "numero" : "F2026-005",
-    "type" : "FACTURE",
-    "dateEmission" : "29/07/2026",
-    "datePrestation" : "15/08/2026",
-    "clientNom" : "Bar Le Central",
-    "clientAdresse" : "12 Rue de la Paix, 44000 Nantes",
-    "validite" : "À réception de facture",
-    "items" : [ {
-      "designation" : "Prestation artistique DJ (Animation Live - Horaires: 22h00 - 02h00)",
-      "quantite" : 1.0,
-      "unite" : "Forfait",
-      "prixUnitaire" : 180.0,
-      "montant" : 180.0
-    }, {
-      "designation" : "Mise à disposition sonorisation mobile Woodbrass Stage Power 210",
-      "quantite" : 1.0,
-      "unite" : "Forfait",
-      "prixUnitaire" : 70.0,
-      "montant" : 70.0
-    }, {
-      "designation" : "Frais de déplacement (Distance inférieure à 15 km)",
-      "quantite" : 1.0,
-      "unite" : "Km",
-      "prixUnitaire" : 0.0,
-      "montant" : 0.0
-    } ],
-    "totalHt" : 250.0,
-    "totalTtc" : 250.0,
-    "acompte" : 0.0,
-    "status" : "ENVOYÉ",
-    "modeReglement" : "Virement",
-    "rib" : "[Insérer RIB Revolut / N26 de Clément]"
-  }, {
-    "id" : "df-068f1036",
-    "numero" : "D2026-001",
-    "type" : "DEVIS",
-    "dateEmission" : "29/07/2026",
-    "datePrestation" : "29/07/2026",
-    "clientNom" : "Bar Le Central",
-    "clientAdresse" : "12 Rue de la Paix, 44000 Nantes",
-    "validite" : "30 Jours",
-    "items" : [ {
-      "designation" : "1",
-      "quantite" : 1.0,
-      "unite" : "Forfait",
-      "prixUnitaire" : 250.0,
-      "montant" : 250.0
-    } ],
-    "totalHt" : 250.0,
-    "totalTtc" : 250.0,
-    "acompte" : 75.0,
-    "status" : "BROUILLON",
-    "modeReglement" : "Virement",
-    "rib" : "[Insérer RIB Revolut / N26 de Clément]"
-  } ],
-  "contrats" : [ {
-    "id" : "contrat-1",
-    "dateContrat" : "29/07/2026",
-    "clientNom" : "Bar Le Central",
-    "clientRepresentant" : "M. Jean Martin (Gérant)",
-    "prestationDate" : "15/08/2026",
-    "prestationHoraires" : "22h00 - 02h00",
-    "prestationTarif" : 250.0,
-    "prestationAcompte" : 75.0,
-    "prestationSolde" : 175.0,
-    "prestationTypeAmbiance" : "House, Techno, Chill, Généraliste",
-    "status" : "SIGNÉ"
-  }, {
-    "id" : "contrat-6a726d13",
-    "dateContrat" : "29/07/2026",
-    "clientNom" : "Bar Le Central",
-    "clientRepresentant" : "",
-    "prestationDate" : "29/07/2026",
-    "prestationHoraires" : "22h00 - 02h00",
-    "prestationTarif" : 250.0,
-    "prestationAcompte" : 75.0,
-    "prestationSolde" : 175.0,
-    "prestationTypeAmbiance" : "Généraliste, House",
-    "status" : "SIGNÉ"
-  } ]
+  "clients": [
+    {
+      "id": "client-1",
+      "nom": "La laiterie",
+      "adresse": "138 Av. de l'Hippodrome, 59130 Lambersart",
+      "email": "",
+      "telephone": ""
+    },
+    {
+      "id": "client-2",
+      "nom": "Le Bouillon Baroque",
+      "adresse": "2 Rue du Faubourg des Postes, 59000 Lille",
+      "email": "",
+      "telephone": ""
+    },
+    {
+      "id": "client-3",
+      "nom": "Epicerie de Dany",
+      "adresse": "75 Rue Séré de Rivières, 59118 Wambrechies",
+      "email": "",
+      "telephone": ""
+    }
+  ],
+  "recettes": [
+    {
+      "id": "recette-0",
+      "dateEncaissement": "KLMT Events - Livre des Recettes",
+      "numeroFacture": "",
+      "client": "",
+      "naturePrestation": "",
+      "montantHt": 0,
+      "modeReglement": ""
+    }
+  ],
+  "devisFactures": [],
+  "contrats": [],
+  "indisponibilites": []
 }
