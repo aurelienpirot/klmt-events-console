@@ -11,6 +11,24 @@ interface RecettesTabProps {
   addToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
+const convertToInputDateFormat = (dateStr: string) => {
+  if (!dateStr || typeof dateStr !== 'string') return '';
+  const parts = dateStr.split('/');
+  if (parts.length === 3) {
+    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+  }
+  return dateStr;
+};
+
+const convertToDbDateFormat = (dateStr: string) => {
+  if (!dateStr || typeof dateStr !== 'string') return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
+};
+
 export default function RecettesTab({
   recettes,
   devisFactures,
@@ -218,7 +236,26 @@ export default function RecettesTab({
             <div className="modal-body">
               <div className="control-group" style={{ marginBottom: '15px' }}>
                 <label className="control-label">Date Encaissement :</label>
-                <input type="text" value={recetteForm.dateEncaissement} onChange={(e) => setRecetteForm({ ...recetteForm, dateEncaissement: e.target.value })} style={{ width: '100%', boxSizing: 'border-box' }} placeholder="JJ/MM/AAAA" />
+                <input
+                  type="date"
+                  value={convertToInputDateFormat(recetteForm.dateEncaissement)}
+                  onChange={(e) => setRecetteForm({ ...recetteForm, dateEncaissement: convertToDbDateFormat(e.target.value) })}
+                  onClick={(e) => {
+                    try {
+                      e.currentTarget.showPicker();
+                    } catch (err) {
+                      console.error(err);
+                    }
+                  }}
+                  onFocus={(e) => {
+                    try {
+                      e.currentTarget.showPicker();
+                    } catch (err) {
+                      console.error(err);
+                    }
+                  }}
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '10px', backgroundColor: '#0d1117', border: '1px solid var(--border-color)', color: '#ffffff', borderRadius: '8px', cursor: 'pointer' }}
+                />
               </div>
               <div className="control-group" style={{ marginBottom: '15px' }}>
                 <label className="control-label">N° Facture : <span style={{ color: 'red' }}>*</span></label>

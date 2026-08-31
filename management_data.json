@@ -24,16 +24,67 @@
   ],
   "recettes": [
     {
-      "id": "recette-0",
-      "dateEncaissement": "KLMT Events - Livre des Recettes",
-      "numeroFacture": "",
-      "client": "",
-      "naturePrestation": "",
-      "montantHt": 0,
-      "modeReglement": ""
+      "id": "recette-aa944e25-baf5-468e-a881-50f7984973cb",
+      "dateEncaissement": "31/08/2026",
+      "numeroFacture": "F2026-001",
+      "client": "La laiterie",
+      "naturePrestation": "Brunch",
+      "montantHt": 120,
+      "modeReglement": "Espèces"
     }
   ],
-  "devisFactures": [],
+  "devisFactures": [
+    {
+      "id": "df-92b50787-4e8f-42f8-9ceb-c73b34fd094b",
+      "numero": "D2026-001",
+      "type": "DEVIS",
+      "dateEmission": "26/07/2026",
+      "datePrestation": "26/07/2026",
+      "clientNom": "La laiterie",
+      "clientAdresse": "138 Av. de l'Hippodrome, 59130 Lambersart",
+      "validite": "30 Jours",
+      "items": [
+        {
+          "designation": "Brunch",
+          "quantite": 1,
+          "unite": "Forfait",
+          "prixUnitaire": 120,
+          "montant": 120
+        }
+      ],
+      "totalHt": 120,
+      "totalTtc": 120,
+      "acompte": 120,
+      "status": "PAYÉ",
+      "modeReglement": "Virement",
+      "rib": "[Insérer RIB Revolut / N26 de Clément]"
+    },
+    {
+      "id": "df-89b8fa8a-1d15-4231-ae76-1fb0d4e0d32c",
+      "numero": "F2026-001",
+      "type": "FACTURE",
+      "dateEmission": "31/08/2026",
+      "datePrestation": "26/07/2026",
+      "clientNom": "La laiterie",
+      "clientAdresse": "138 Av. de l'Hippodrome, 59130 Lambersart",
+      "validite": "À réception de facture",
+      "items": [
+        {
+          "designation": "Brunch",
+          "quantite": 1,
+          "unite": "Forfait",
+          "prixUnitaire": 120,
+          "montant": 120
+        }
+      ],
+      "totalHt": 120,
+      "totalTtc": 120,
+      "acompte": 0,
+      "status": "PAYÉ",
+      "modeReglement": "Virement",
+      "rib": "[Insérer RIB Revolut / N26 de Clément]"
+    }
+  ],
   "contrats": [],
   "indisponibilites": []
 }

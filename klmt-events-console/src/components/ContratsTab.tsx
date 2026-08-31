@@ -10,6 +10,24 @@ interface ContratsTabProps {
   addToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
+const convertToInputDateFormat = (dateStr: string) => {
+  if (!dateStr || typeof dateStr !== 'string') return '';
+  const parts = dateStr.split('/');
+  if (parts.length === 3) {
+    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+  }
+  return dateStr;
+};
+
+const convertToDbDateFormat = (dateStr: string) => {
+  if (!dateStr || typeof dateStr !== 'string') return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
+};
+
 export default function ContratsTab({
   contrats,
   devisFactures,
@@ -240,7 +258,26 @@ export default function ContratsTab({
                 </div>
                 <div className="control-group">
                   <label className="control-label">Date du contrat :</label>
-                  <input type="text" value={contratForm.dateContrat} onChange={(e) => setContratForm({ ...contratForm, dateContrat: e.target.value })} style={{ width: '100%', boxSizing: 'border-box' }} />
+                  <input
+                    type="date"
+                    value={convertToInputDateFormat(contratForm.dateContrat)}
+                    onChange={(e) => setContratForm({ ...contratForm, dateContrat: convertToDbDateFormat(e.target.value) })}
+                    onClick={(e) => {
+                      try {
+                        e.currentTarget.showPicker();
+                      } catch (err) {
+                        console.error(err);
+                      }
+                    }}
+                    onFocus={(e) => {
+                      try {
+                        e.currentTarget.showPicker();
+                      } catch (err) {
+                        console.error(err);
+                      }
+                    }}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '10px', backgroundColor: '#0d1117', border: '1px solid var(--border-color)', color: '#ffffff', borderRadius: '8px', cursor: 'pointer' }}
+                  />
                 </div>
                 <div className="control-group">
                   <label className="control-label">Nom du Client :</label>

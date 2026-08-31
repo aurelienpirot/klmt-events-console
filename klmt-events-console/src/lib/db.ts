@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import { MongoClient } from 'mongodb';
 import { Client, DevisFacture, Contrat, Recette, Indisponibilite } from '../types';
 
 export interface Data {
@@ -8,6 +9,20 @@ export interface Data {
   devisFactures: DevisFacture[];
   contrats: Contrat[];
   indisponibilites?: Indisponibilite[]; // Optionnel pour rétrocompatibilité
+}
+
+// Global cached MongoClient for serverless environments
+let cachedMongoClient: MongoClient | null = null;
+
+async function getMongoClient(): Promise<MongoClient> {
+  if (cachedMongoClient) return cachedMongoClient;
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error("MONGODB_URI is not defined in your environment variables. Required for Cloud mode.");
+  }
+  cachedMongoClient = new MongoClient(uri);
+  await cachedMongoClient.connect();
+  return cachedMongoClient;
 }
 
 function getDataFilePath() {
@@ -26,6 +41,36 @@ function getDataFilePath() {
 }
 
 export async function readData(): Promise<Data> {
+  const dbMode = process.env.DB_MODE || 'local';
+
+  if (dbMode === 'cloud') {
+    try {
+      const client = await getMongoClient();
+      const dbObj = client.db('klmt-events');
+      
+      const [clients, recettes, devisFactures, contrats, indisponibilites] = await Promise.all([
+        dbObj.collection('clients').find({}).toArray(),
+        dbObj.collection('recettes').find({}).toArray(),
+        dbObj.collection('devisFactures').find({}).toArray(),
+        dbObj.collection('contrats').find({}).toArray(),
+        dbObj.collection('indisponibilites').find({}).toArray(),
+      ]);
+
+      // Map any mongo _id or fields as necessary (we cast to matching interface safely)
+      return {
+        clients: (clients as any[]).map(({ _id, ...rest }) => rest) as Client[],
+        recettes: (recettes as any[]).map(({ _id, ...rest }) => rest) as Recette[],
+        devisFactures: (devisFactures as any[]).map(({ _id, ...rest }) => rest) as DevisFacture[],
+        contrats: (contrats as any[]).map(({ _id, ...rest }) => rest) as Contrat[],
+        indisponibilites: (indisponibilites as any[]).map(({ _id, ...rest }) => rest) as Indisponibilite[],
+      };
+    } catch (error) {
+      console.error("Error reading from MongoDB Atlas, returning empty structure", error);
+      return { clients: [], recettes: [], devisFactures: [], contrats: [], indisponibilites: [] };
+    }
+  }
+
+  // Local fallback
   const filePath = getDataFilePath();
   try {
     const content = await fs.readFile(filePath, 'utf-8');
@@ -43,10 +88,45 @@ export async function readData(): Promise<Data> {
   }
 }
 
-// Serialized write queue to guarantee absence of corruption/race conditions
+// Serialized write queue to guarantee absence of corruption/race conditions in local mode
 let writeQueue = Promise.resolve();
 
 export async function writeData(data: Data): Promise<void> {
+  const dbMode = process.env.DB_MODE || 'local';
+
+  if (dbMode === 'cloud') {
+    try {
+      const client = await getMongoClient();
+      const dbObj = client.db('klmt-events');
+
+      // Sync local collections with Cloud database. Overwriting collections is extremely simple and fast for smaller datasets!
+      await Promise.all([
+        dbObj.collection('clients').deleteMany({}).then(async () => {
+          if (data.clients.length > 0) await dbObj.collection('clients').insertMany(data.clients);
+        }),
+        dbObj.collection('recettes').deleteMany({}).then(async () => {
+          if (data.recettes.length > 0) await dbObj.collection('recettes').insertMany(data.recettes);
+        }),
+        dbObj.collection('devisFactures').deleteMany({}).then(async () => {
+          if (data.devisFactures.length > 0) await dbObj.collection('devisFactures').insertMany(data.devisFactures);
+        }),
+        dbObj.collection('contrats').deleteMany({}).then(async () => {
+          if (data.contrats.length > 0) await dbObj.collection('contrats').insertMany(data.contrats);
+        }),
+        dbObj.collection('indisponibilites').deleteMany({}).then(async () => {
+          if (data.indisponibilites && data.indisponibilites.length > 0) {
+            await dbObj.collection('indisponibilites').insertMany(data.indisponibilites);
+          }
+        }),
+      ]);
+      return;
+    } catch (error) {
+      console.error("Failed to write to MongoDB Atlas:", error);
+      throw error;
+    }
+  }
+
+  // Local mode
   const filePath = getDataFilePath();
   
   // Chain the write on the promise queue
