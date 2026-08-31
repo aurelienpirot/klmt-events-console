@@ -305,7 +305,22 @@ export default function DashboardTab({
     }
 
     const severityOrder = { high: 0, warning: 1, info: 2 };
-    return tasks.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]).slice(0, 5);
+    return tasks.sort((a, b) => {
+      // 1. Tri par gravité (priorité)
+      if (severityOrder[a.severity] !== severityOrder[b.severity]) {
+        return severityOrder[a.severity] - severityOrder[b.severity];
+      }
+      
+      // 2. Tri secondaire par date d'échéance (ordre chronologique croissant)
+      const dateA = parseDateToObj(a.date)?.getTime() || 0;
+      const dateB = parseDateToObj(b.date)?.getTime() || 0;
+      
+      // Placer les dates inconnues tout à la fin
+      if (dateA === 0) return 1;
+      if (dateB === 0) return -1;
+      
+      return dateA - dateB;
+    }).slice(0, 5);
   };
 
   const pendingTasks = getPendingTasks();
