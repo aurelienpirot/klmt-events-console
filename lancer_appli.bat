@@ -16,6 +16,14 @@ if not exist "%~dp0klmt-events-console\node_modules\" (
     echo [1/2] Packages du Frontend Next.js deja installes. Demarrage...
 )
 
+:: Copier le fichier .env de la racine vers le dossier de l'application Next.js si necessaire
+if exist "%~dp0.env" (
+    echo [*] Copie du fichier d'environnement .env dans le dossier klmt-events-console...
+    copy /Y "%~dp0.env" "%~dp0klmt-events-console\.env" >nul
+) else (
+    echo [!] ATTENTION : Aucun fichier .env trouve a la racine de l'application.
+)
+
 echo [2/2] Demarrage du Frontend Next.js (klmt-events-console sur le port 3000)...
 start "Console de Gestion KLMT Events (3000)" cmd /c "cd /d %~dp0klmt-events-console && npm run dev"
 timeout /t 3 /nobreak >nul

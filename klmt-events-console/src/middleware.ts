@@ -1,17 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { verifySession } from './lib/auth';
 
-export function middleware(request: NextRequest) {
-  const dbMode = process.env.DB_MODE || 'local';
-  
-  // En local, pas d'authentification pour coder tranquille !
-  if (dbMode === 'local') {
-    return NextResponse.next();
-  }
-
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Autoriser l'accès aux fichiers statiques, à la page de connexion et aux routes d'API d'authentification (si existantes, mais on gère tout sur /login)
+  // Autoriser l'accès aux fichiers statiques, à la page de connexion et au favicon
   if (
     pathname.startsWith('/_next') ||
     pathname === '/login' ||
@@ -20,10 +14,23 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  const sessionSecret = process.env.SESSION_SECRET;
+
+  if (!sessionSecret) {
+    console.error("CRITICAL SECURITY ERROR: SESSION_SECRET is not configured.");
+    // Fail-closed : On bloque l'accès aux API avec une 500 et on redirige vers le login avec un code d'erreur
+    if (pathname.startsWith('/api')) {
+      return NextResponse.json({ error: 'Configuration de sécurité manquante sur le serveur.' }, { status: 500 });
+    }
+    const loginUrl = new URL('/login?error=env', request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
   // Vérifier la présence du cookie de session
   const authCookie = request.cookies.get('klmt_auth_session');
+  const isValid = authCookie ? await verifySession(authCookie.value, sessionSecret) : false;
   
-  if (!authCookie || authCookie.value !== 'klmt-authenticated-session-token') {
+  if (!isValid) {
     // Si c'est un appel d'API, renvoyer une erreur 401
     if (pathname.startsWith('/api')) {
       return NextResponse.json({ error: 'Non autorisé. Veuillez vous connecter.' }, { status: 401 });

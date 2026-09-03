@@ -1,22 +1,33 @@
 import React from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { createSession } from '@/lib/auth';
 
 interface LoginPageProps {
   searchParams: { error?: string };
 }
 
 export default function LoginPage({ searchParams }: LoginPageProps) {
-  const isError = searchParams?.error === '1';
+  const errorType = searchParams?.error;
 
   async function handleLogin(formData: FormData) {
     'use server';
 
     const password = formData.get('password');
-    const adminPassword = process.env.ADMIN_PASSWORD || 'klmt2026'; // fallback si non défini
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    const sessionSecret = process.env.SESSION_SECRET;
+
+    // Fail-closed : Si les variables de sécurité ne sont pas configurées, on refuse l'authentification
+    if (!adminPassword || !sessionSecret) {
+      console.error("CRITICAL SECURITY ERROR: ADMIN_PASSWORD or SESSION_SECRET is not configured.");
+      redirect('/login?error=env');
+    }
 
     if (password === adminPassword) {
-      cookies().set('klmt_auth_session', 'klmt-authenticated-session-token', {
+      const oneWeekInMs = 60 * 60 * 24 * 7 * 1000;
+      const signedSession = await createSession(oneWeekInMs, sessionSecret);
+
+      cookies().set('klmt_auth_session', signedSession, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
@@ -79,7 +90,7 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
             />
           </div>
 
-          {isError && (
+          {errorType === '1' && (
             <div style={{
               color: '#ff4d4f',
               backgroundColor: 'rgba(255, 77, 79, 0.1)',
@@ -91,6 +102,22 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
               marginTop: '5px'
             }}>
               ❌ Mot de passe incorrect. Veuillez réessayer.
+            </div>
+          )}
+
+          {errorType === 'env' && (
+            <div style={{
+              color: '#f97316',
+              backgroundColor: 'rgba(249, 115, 22, 0.1)',
+              border: '1px solid rgba(249, 115, 22, 0.2)',
+              padding: '10px 12px',
+              borderRadius: '6px',
+              fontSize: '0.8rem',
+              textAlign: 'left',
+              marginTop: '5px',
+              lineHeight: '1.4'
+            }}>
+              ⚠️ Erreur serveur : Les variables d'environnement ADMIN_PASSWORD ou SESSION_SECRET ne sont pas configurées sur Vertex ou en local.
             </div>
           )}
 
